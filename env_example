@@ -1,0 +1,2 @@
+# You should create a new file with ".env" name or something similar and NOT include it in your git
+export PASS=my_password

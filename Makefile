@@ -51,7 +51,7 @@ help:
 	@echo "make help"
 	@echo "       Display this message"
 	@echo "make install [server=<prod|circleci|local>]"
-	@echo "       Call clean delete_conda_env create_conda_env setup run_tests"
+	@echo "       Call clean delete_conda_env create_conda_env setup run_tests download_dataset"
 	@echo "make clean [server=<prod|circleci|local>]"
 	@echo "       Delete all './build ./dist ./*.pyc ./*.tgz ./*.egg-info' files"
 	@echo "make delete_env [server=<prod|circleci|local>]"
@@ -62,6 +62,8 @@ help:
 	@echo "       Call setup.py install"
 	@echo "make run_tests [server=<prod|circleci|local>]"
 	@echo "       Run all the tests from the specified folder"
+	@echo "make download_dataset [server=<prod|circleci|local>]"
+	@echo "       Download the covid world vaccination progress dataset"
 	@echo "-----------------------------------------------------------------------------------------------------------"
 install:
 	$(MAKE) clean
@@ -69,6 +71,7 @@ install:
 	$(MAKE) create_env
 	$(MAKE) setup
 	$(MAKE) run_tests
+	$(MAKE) download_dataset
 	@echo "Installation Successful!"
 clean:
 	$(PYTHON_BIN)python setup.py clean
@@ -82,6 +85,12 @@ run_tests:
 	$(BIN)/python setup.py test $(SETUP_FLAG)
 setup:
 	$(BIN)/python setup.py install $(SETUP_FLAG)
+download_dataset:
+	rm -rf datasets/covid-world-vaccination-progress
+	install -d datasets/covid-world-vaccination-progress
+	$(BIN)/kaggle datasets download -d gpreda/covid-world-vaccination-progress
+	unzip covid-world-vaccination-progress.zip -d datasets/covid-world-vaccination-progress
+	rm covid-world-vaccination-progress.zip
 
 
 .PHONY: help install clean delete_env create_env setup run_tests

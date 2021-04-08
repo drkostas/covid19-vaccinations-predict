@@ -1,11 +1,13 @@
 # DataMiningProject<img src='https://github.com/CISC879-BigData/Project_Georgiou/blob/master/img/snek.png' align='right' width='180' height='104'>
 
-[![CircleCI](https://circleci.com/gh/drkostas/data_mining/tree/master.svg?style=svg)](https://circleci.com/gh/drkostas/data_mining/tree/master)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/drkostas/data_mining/master/LICENSE)
 
 ## Table of Contents
 
 + [About](#about)
+    + [Information About The Dataset](#datasetinfo)
+    + [Questions To Be Answered](#questionsinfo)
+    + [Some Details](#detailsinfo)
 + [Getting Started](#getting_started)
     + [Prerequisites](#prerequisites)
 + [Installing, Testing, Building](#installing)
@@ -29,7 +31,30 @@
 
 ## About <a name = "about"></a>
 
-This is my project for the Data Mining Course (COSC-526)
+Dataset: [COVID-19 World Vaccination Progress](https://www.kaggle.com/gpreda/covid-world-vaccination-progress)
+<br>
+This is my project for the Data Mining Course (COSC-526). The main code is in this [Jupyter Notebook](project.ipynb).
+
+### Information About The Dataset <a name = "datasetinfo"></a>
+This dataset contains information about the vaccinations happening in each country daily. The data are being collected almost daily from this website using this code. As of writing this (2/27), the dataset has 4,380 rows with vaccination data for 112 unique countries and is in the CSV format.
+
+It has 15 columns in total, including among others the country name, the daily vaccination, the vaccinated people per million that date, and the source of each record.
+
+### Questions To Be Answered <a name = "questionsinfo"></a>
+- Can you identify countries that faced bottlenecks on their daily vaccination rates?
+- Can you cluster together countries that faced similar bottlenecks? In what sense are they related?
+- Can you enrich the data with more info (country location, GDP, etc) to achieve better results on the previous question?
+- Can you track down the bottlenecks and find patterns in how they propagate from day to day from one cluster to another?
+- Can you predict future bottlenecks on some clusters based on these patterns?
+
+### Some Details <a name = "detailsinfo"></a>
+
+- The dataset is in the datasets/covid-world-vaccinations-progress directory
+- In the data mining directory are located three custom packages:
+  - Configuration: for handling the yml configuration
+  - ColorizedLogger: For formatted logging that saves output in log files
+  - timeit: ContextManager&Decorator for timing functions and code blocks
+- The project was compiled using my Template Cookiecutter project: https://github.com/drkostas/starter
 
 ## Getting Started <a name = "getting_started"></a>
 
@@ -63,6 +88,12 @@ tests quickly, execute the following command:</i>
 ```ShellSession
 $ make install server=local
 ```
+
+To update the Covid Dataset, run:
+```ShellSession
+$ make download_dataset server=local
+```
+
 
 <i>If you executed the previous command, you can skip through to
 the [Running locally section](#run_locally).</i>

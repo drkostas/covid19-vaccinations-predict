@@ -1,5 +1,5 @@
 from contextlib import ContextDecorator
-from typing import Callable
+from typing import Callable, IO
 from functools import wraps
 from time import time
 
@@ -9,6 +9,9 @@ time_logger = ColorizedLogger('Timeit', 'white')
 
 
 class timeit(ContextDecorator):
+    custom_print: str
+    skip: bool
+    file: IO
 
     def __init__(self, **kwargs):
         """Decorator/ContextManager for counting the execution times of functions
@@ -23,7 +26,7 @@ class timeit(ContextDecorator):
         """ This is called only when invoked as a decorator
 
         Args:
-            method: The method to wrap
+            func: The method to wrap
         """
 
         @wraps(func)
@@ -58,4 +61,10 @@ class timeit(ContextDecorator):
                 print_string = 'Code block took: {duration:2.5f} sec(s)'
             else:
                 print_string = self.custom_print
-            time_logger.info(print_string.format(duration=total))
+            if hasattr(self, 'file'):
+                self.file.write(print_string.format(duration=total))
+            if hasattr(self, 'skip'):
+                if not self.skip:
+                    time_logger.info(print_string.format(duration=total))
+            else:
+                time_logger.info(print_string.format(duration=total))

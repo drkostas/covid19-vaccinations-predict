@@ -36,6 +36,7 @@ class ColorizedLogger(AbstractFancyLogger):
         self._color = color
         self._on_color = on_color
         self._attrs = attrs if attrs else ['bold']
+        self.logger_name = logger_name
         self._logger = self.create_logger(logger_name=logger_name)
         super().__init__()
 
@@ -102,6 +103,7 @@ class ColorizedLogger(AbstractFancyLogger):
     def create_logger(self, logger_name: str):
         # Create a logger, with the previously-defined handlers
         logger = logging.getLogger(logger_name)
+        logger.handlers = []
         logger.setLevel(self.log_level)
         logger = self.add_file_handler_if_needed(logger)
         # Create a streaming handler
@@ -115,6 +117,7 @@ class ColorizedLogger(AbstractFancyLogger):
         blank_streaming_handler.setFormatter(logging.Formatter(fmt=''))
         # Add streaming handlers
         logger.addHandler(main_streaming_handler)
+        logger.propagate = False
         logger.main_streaming_handler = main_streaming_handler
         logger.blank_streaming_handler = blank_streaming_handler
         # Create the new line method
@@ -130,14 +133,17 @@ class ColorizedLogger(AbstractFancyLogger):
             os.makedirs(log_dir)
 
     @classmethod
-    def setup_logger(cls, log_path: str, debug: bool) -> None:
+    def setup_logger(cls, log_path: str, debug: bool = False, clear_log: bool = False) -> None:
         """ Sets-up the basic_logger
 
         Args:
             log_path (str): The path where the log file will be saved
             debug (bool): Whether to print debug messages or not
+            clear_log (bool): Whether to empty the log file or not
         """
         cls.log_path = os.path.abspath(log_path)
+        if clear_log:
+            open(cls.log_path, 'w').close()
         cls.log_level = logging.INFO if debug is not True else logging.DEBUG
         fancy_log_logger.info(f"Logger is set. Log file path: {cls.log_path}")
 

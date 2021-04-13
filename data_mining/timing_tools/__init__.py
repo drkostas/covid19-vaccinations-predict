@@ -1,4 +1,4 @@
-"""Timeit sub-package of DataMiningProject."""
+"""Timeit sub-package of Starter."""
 
 from .timeit import timeit
 

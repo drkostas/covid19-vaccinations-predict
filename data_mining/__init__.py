@@ -2,6 +2,7 @@
 
 from data_mining.fancy_logger import ColorizedLogger
 from data_mining.timing_tools import timeit
+from data_mining.project_utils import NullsFixer
 from data_mining.configuration import Configuration, validate_json_schema
 
 __author__ = "drkostas"

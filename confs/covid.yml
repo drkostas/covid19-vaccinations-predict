@@ -2,5 +2,8 @@ tag: project
 covid-progress:
   - properties:
       data_path: datasets/covid-world-vaccination-progress/country_vaccinations.csv
+      data_extra_path: datasets/world-bank/data.csv
+#      data_extra_path: datasets/economic-freedom-index/data.csv
+      # data_extra_path: datasets/countries-of-the-world/data.csv
       log_path: logs/covid_progress.log
     type: csv

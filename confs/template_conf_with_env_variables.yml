@@ -1,9 +1,0 @@
-tag: template
-example_db:
-  - properties:
-      hostname: example.host.name
-      username: my_name
-      password: !ENV ${PASS}
-      db_name: my_db1
-      port: 3306
-    type: mysql

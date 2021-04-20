@@ -66,7 +66,7 @@ class NullsFixer:
                 break
             nulls_prev = nulls
 
-        return df  # .loc[:, all_cols]
+        return df.loc[:, all_cols]
 
     def infer_accum_col(self, df: pd.DataFrame, col: str, limit_col: str) -> pd.DataFrame:
         def _infer_values(col, col_list, nulls_idx, val, consecutive_nulls, limit_col: pd.Series):

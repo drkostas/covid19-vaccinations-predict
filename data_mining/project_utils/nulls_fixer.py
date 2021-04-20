@@ -19,12 +19,12 @@ class NullsFixer:
         self.group_col = group_col
 
     @staticmethod
-    def fill_population(df: pd.DataFrame, df_meta: pd.DataFrame) -> pd.DataFrame:
-        def f1(row, col, target_col):
+    def fill_with_population(df: pd.DataFrame, df_meta: pd.DataFrame) -> pd.DataFrame:
+        def f1(row, col, target_col, multiplier=1):
             if pd.isna(row[target_col]):
                 abs_val = row[col]
                 ph_val = 100 * abs_val / get_population(df_meta, row['country'])
-                return_val = round(ph_val, 2)
+                return_val = round(ph_val, 2) * multiplier
             else:
                 return_val = row[target_col]
             return return_val
@@ -32,12 +32,14 @@ class NullsFixer:
         def get_population(_df, country):
             return _df.loc[_df['country'] == country, 'population'].values[0]
 
-        df['people_vaccinated_per_hundred2'] = df.apply(f1, args=(
+        df['people_vaccinated_per_hundred'] = df.apply(f1, args=(
             'people_vaccinated', 'people_vaccinated_per_hundred'), axis=1)
-        df['people_fully_vaccinated_per_hundred2'] = df.apply(f1, args=(
+        df['people_fully_vaccinated_per_hundred'] = df.apply(f1, args=(
             'people_fully_vaccinated', 'people_fully_vaccinated_per_hundred'), axis=1)
-        df['total_vaccinations_per_hundred2'] = df.apply(f1, args=(
+        df['total_vaccinations_per_hundred'] = df.apply(f1, args=(
             'total_vaccinations', 'total_vaccinations_per_hundred'), axis=1)
+        df['daily_vaccinations_per_million'] = df.apply(f1, args=(
+            'daily_vaccinations', 'daily_vaccinations_per_million', 10000), axis=1)
         return df
 
     def fix_and_infer(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -64,7 +66,7 @@ class NullsFixer:
                 break
             nulls_prev = nulls
 
-        return df.loc[:, all_cols]
+        return df  # .loc[:, all_cols]
 
     def infer_accum_col(self, df: pd.DataFrame, col: str, limit_col: str) -> pd.DataFrame:
         def _infer_values(col, col_list, nulls_idx, val, consecutive_nulls, limit_col: pd.Series):
@@ -183,14 +185,27 @@ class NullsFixer:
 
     @staticmethod
     def global_fix(row):
-        cond_1_1 = row['people_vaccinated'] > row['total_vaccinations']
-        cond_1_2 = pd.notna(row['people_vaccinated']) and pd.notna(row['total_vaccinations'])
-        cond_2_1 = row['people_fully_vaccinated'] > row['total_vaccinations']
-        cond_2_2 = pd.notna(row['people_fully_vaccinated']) and pd.notna(row['total_vaccinations'])
-        if cond_1_1 and cond_1_2:
-            row['people_vaccinated'] = row['total_vaccinations']
-        elif cond_2_1 and cond_2_2:
-            row['people_fully_vaccinated'] = row['total_vaccinations']
+        # Setup the conditions
+        cond_1_1 = pd.notna(row['people_vaccinated']) and pd.notna(row['total_vaccinations'])
+        cond_1_2 = row['people_vaccinated'] > row['total_vaccinations']
+        cond_2_1 = pd.notna(row['people_fully_vaccinated']) and pd.notna(row['total_vaccinations'])
+        cond_2_2 = row['people_fully_vaccinated'] > row['total_vaccinations']
+        cond_3_1 = pd.notna(row['people_vaccinated']) and pd.notna(row['people_fully_vaccinated']) \
+            and pd.notna(row['total_vaccinations'])
+        cond_3_2 = row['people_vaccinated'] + row['people_fully_vaccinated'] \
+            > row['total_vaccinations']
+
+        # Check and fix
+        if cond_3_1:
+            if cond_3_2:
+                row['people_fully_vaccinated'], _ = divmod(row['total_vaccinations'], 2)
+                row['people_vaccinated'] = row['total_vaccinations'] - row['people_fully_vaccinated']
+        elif cond_1_1:
+            if cond_1_2:
+                row['people_vaccinated'] = row['total_vaccinations']
+        elif cond_2_1:
+            if cond_2_2:
+                row['people_fully_vaccinated'] = row['total_vaccinations']
 
         return row
 

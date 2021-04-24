@@ -1,9 +1,10 @@
 import numpy as np
 import pandas as pd
-from typing import List
+from typing import List, Tuple
+from sklearn.preprocessing import minmax_scale
 from data_mining import ColorizedLogger
 
-logger = ColorizedLogger('NullsFixer', 'white')
+logger = ColorizedLogger('NullsFixer', 'magenta')
 
 
 class NullsFixer:
@@ -41,6 +42,12 @@ class NullsFixer:
         df['daily_vaccinations_per_million'] = df.apply(f1, args=(
             'daily_vaccinations', 'daily_vaccinations_per_million', 10000), axis=1)
         return df
+
+    def scale_cols(self, df: pd.DataFrame, cols: List[Tuple]) -> pd.DataFrame:
+        for col, max_val in cols:
+            df[col] = df.groupby(self.group_col)[col].transform(
+                lambda x: minmax_scale(x.astype(float), feature_range=(0, max_val)))
+            return df
 
     def fix_and_infer(self, df: pd.DataFrame) -> pd.DataFrame:
         accum_cols = ['people_fully_vaccinated', 'people_vaccinated', 'total_vaccinations']
@@ -191,9 +198,9 @@ class NullsFixer:
         cond_2_1 = pd.notna(row['people_fully_vaccinated']) and pd.notna(row['total_vaccinations'])
         cond_2_2 = row['people_fully_vaccinated'] > row['total_vaccinations']
         cond_3_1 = pd.notna(row['people_vaccinated']) and pd.notna(row['people_fully_vaccinated']) \
-            and pd.notna(row['total_vaccinations'])
+                   and pd.notna(row['total_vaccinations'])
         cond_3_2 = row['people_vaccinated'] + row['people_fully_vaccinated'] \
-            > row['total_vaccinations']
+                   > row['total_vaccinations']
 
         # Check and fix
         if cond_3_1:

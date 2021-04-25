@@ -57,6 +57,33 @@ class Visualizer:
         plt.show()
 
     @staticmethod
+    def plot_vaccines_val_counts(df: pd.DataFrame, cols_to_visualize: List[str],
+                                    print_values: bool = False, top: int = 10) -> None:
+        # Copy the DF
+        df_ = df.copy()
+
+        # Calculate Value Counts
+        val_counts = {}
+        for col in cols_to_visualize:
+            val_counts[col] = int(df_[col].sum())
+            if print_values:
+                logger.info(f"{col}: {val_counts[col]}")
+
+        # Plot them
+        sns.set(font_scale=1.0)
+        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(15, 10))
+        val_counts = {k: v for k, v in sorted(val_counts.items(),
+                                              key=lambda item: item[1],
+                                              reverse=True)}
+        ax = sns.barplot(x=pd.Series(val_counts.keys()),
+                         y=pd.Series(val_counts.values()), ax=ax)
+        ax.set_title(f"Number of day entries for each vaccine", fontsize=28)
+        ax.set_xticklabels(ax.get_xticklabels(), rotation=90, ha="right", fontsize=20)
+        ax.set_yticklabels(ax.get_yticks(), fontsize=20)
+        plt.tight_layout()
+        plt.show()
+
+    @staticmethod
     def viz_columns_corr(df: pd.DataFrame, cols_to_visualize: List[str]) -> None:
         sns.set(font_scale=1.4)
         sns.heatmap(data=df[cols_to_visualize].corr(), cmap='coolwarm', annot=True, fmt=".1f",

@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 import pandas as pd
 import missingno as msno
@@ -8,6 +10,7 @@ from typing import List, Tuple
 
 from data_mining import ColorizedLogger
 
+warnings.filterwarnings("ignore")
 rcParams['axes.titlepad'] = 20
 pd.set_option('display.max_rows', 500)
 logger = ColorizedLogger('Visualizer', 'cyan')
@@ -30,10 +33,13 @@ class Visualizer:
     @staticmethod
     def plot_categorical_val_counts(df: pd.DataFrame, cols_to_visualize: List[str],
                                     print_values: bool = False, top: int = 10) -> None:
+        # Copy the DF
+        df_ = df.copy()
+
         # Calculate Value Counts
         val_counts = {}
         for col in cols_to_visualize:
-            val_counts[col] = df[col].value_counts().nlargest(top)
+            val_counts[col] = df_[col].value_counts().nlargest(top)
             if print_values:
                 logger.info(f"Column {col.capitalize()} Value Counts:\n{val_counts[col]}\n")
         # Plot them
@@ -57,9 +63,12 @@ class Visualizer:
                     annot_kws={'size': 16})
 
     def plot_numerical_val_counts_per_country(self, df: pd.DataFrame, top: int = 3) -> None:
-        val_counts = df[self.group_col].value_counts().nlargest(top).index
+        # Copy the DF
+        df_ = df.copy()
+
+        val_counts = df_[self.group_col].value_counts().nlargest(top).index
         for iso_code in val_counts:
-            df_filtered = df[df[self.group_col] == iso_code]
+            df_filtered = df_[df_[self.group_col] == iso_code]
             # Configure the grid of the plot
             fig, _ = plt.subplots(nrows=5, ncols=1, figsize=(15, 20))
             ax = [plt.subplot2grid((3, 2), (0, 0), fig=fig), plt.subplot2grid((3, 2), (0, 1), fig=fig),
@@ -114,21 +123,27 @@ class Visualizer:
     @staticmethod
     def viz_missing_values(df: pd.DataFrame, cols: List[str], skip_1: bool = False,
                            skip_2: bool = False, print_values: bool = False) -> None:
+        # Copy the DF
+        df_ = df.copy()
+
         if print_values:
             logger.info(f"Missing Values:\n{df[cols].isna().sum()}")
-        df = df[cols]
+        df_ = df_[cols]
         # msno.bar(covid_df, fontsize=24, color="dodgerblue")
         # Visualize rows to find which columns are null
         if not skip_1:
-            msno.matrix(df, fontsize=28, color=(0.118, 0.565, 1))  # , sort='ascending')
+            msno.matrix(df_, fontsize=28, color=(0.118, 0.565, 1))  # , sort='ascending')
         # Visualize heatmap to find correlations between columns when they have null values
         if not skip_2:
-            msno.heatmap(df, cmap="RdBu", fontsize=28)
+            msno.heatmap(df_, cmap="RdBu", fontsize=28)
 
     def viz_top_countries_accumulated_statistics(self, df: pd.DataFrame, top_n: int = 10) -> None:
+        # Copy the DF
+        df_ = df.copy()
+
         # Plot total vaccinations per country (top 25)
-        vacc_amount = df.groupby(self.group_col).max() \
-                        .sort_values('total_vaccinations', ascending=False).head(top_n)
+        vacc_amount = df_.groupby(self.group_col).max() \
+            .sort_values('total_vaccinations', ascending=False).head(top_n)
         fig, ax = plt.subplots(figsize=(12, 25), nrows=3, ncols=1)
         plt.tight_layout()
         plt.subplots_adjust(hspace=0.6)
@@ -138,16 +153,16 @@ class Visualizer:
         ax[0].set_ylabel('Number of vaccinated citizens')
         ax[0].set_xlabel('Countries')
         # Plot total vaccinations per 100 per country (top 25)
-        vacc_amount = df.groupby(self.group_col).max() \
-                        .sort_values('total_vaccinations_per_hundred', ascending=False).head(top_n)
+        vacc_amount = df_.groupby(self.group_col).max() \
+            .sort_values('total_vaccinations_per_hundred', ascending=False).head(top_n)
         ax[1].bar(vacc_amount.index, vacc_amount.total_vaccinations_per_hundred)
         ax[1].tick_params(labelrotation=90, axis='x')
         ax[1].set_title(f"Total vaccinations per 100 (Top {top_n} Countries)")
         ax[1].set_ylabel('Number of vaccinated citizens per 100 citizens')
         ax[1].set_xlabel('Countries')
         # AVG daily vaccinations per 100 per country(top 25)
-        vacc_amount = df.groupby(self.group_col).mean() \
-                        .sort_values('daily_vaccinations_per_hundred', ascending=False).head(top_n)
+        vacc_amount = df_.groupby(self.group_col).mean() \
+            .sort_values('daily_vaccinations_per_hundred', ascending=False).head(top_n)
         ax[2].bar(vacc_amount.index, vacc_amount.daily_vaccinations_per_hundred)
         ax[2].tick_params(labelrotation=90, axis='x')
         ax[2].set_title(f"AVG daily vaccinations per 100 (Top {top_n} Countries)")
@@ -157,18 +172,33 @@ class Visualizer:
         plt.tight_layout()
         plt.show()
 
-    def viz_top_countries_progress(self, df: pd.DataFrame, cols: List[str], top_n: int = 10) -> None:
-
-
-        plot_data_gr = df.loc[df.country == 'Greece', cols].sort_values(self.sort_col)
-        fig, ax = plt.subplots(figsize=(12, 25), nrows=4, ncols=1)
-        plt.tight_layout()
-        plot_data_gr.set_index('date').plot.line(ax=ax, subplots=True)
-        # plt.subplots_adjust(hspace=0.6)
-        # ax[0].bar(vacc_amount.index, vacc_amount.total_vaccinations)
-        # ax[0].tick_params(labelrotation=90, axis='x')
-        # ax[0].set_title(f"Total vaccinations (Top {top_n} Countries)")
-        # ax[0].set_ylabel('Amount of vaccinated citizens')
-        # ax[0].set_xlabel('Countries')
-        # # Show Plot
-        # plt.show()
+    def viz_top_countries_progress(self, df: pd.DataFrame, top_sort_by: str, top_n: int = 10) -> None:
+        # Copy the DF
+        df_ = df.copy().sort_values(self.sort_col)
+        # Initialize the figure
+        plot_cols = ['total_vaccinations_per_hundred',
+                     'people_vaccinated_per_hundred',
+                     'people_fully_vaccinated_per_hundred',
+                     'daily_vaccinations_per_hundred']
+        fig, ax = plt.subplots(figsize=(16, 32), nrows=4, ncols=1)
+        # Prepare the Data
+        top_countries = list(df_.groupby(self.group_col).max()
+                             .sort_values(top_sort_by, ascending=False)
+                             .head(top_n).index)
+        # Setup the figure
+        for ax_, plot_col in zip(ax, plot_cols):
+            df_groups = df_.loc[df_[self.group_col].isin(top_countries),
+                                [self.group_col, self.sort_col, plot_col]] \
+                .groupby(df_[self.group_col])
+            for name, group_df in df_groups:
+                ax_ = group_df.plot.line(x=self.sort_col, y=plot_col, ax=ax_, label=name,
+                                         legend=True, subplots=False)
+                ax_.set_title(f"{plot_col.capitalize()} Progression", fontsize=24)
+                ax_.set_xlabel('Date', fontsize=22)
+                ax_.set_ylabel('% Value', fontsize=22)
+                ax_.tick_params(axis='both', size=20)
+                ax_.legend(prop={'size': 16})
+                plt.tight_layout()
+                plt.subplots_adjust(hspace=0.6)
+        # Show Plot
+        plt.show()

@@ -4,7 +4,7 @@ from typing import List, Tuple
 from sklearn.preprocessing import minmax_scale
 from data_mining import ColorizedLogger
 
-logger = ColorizedLogger('NullsFixer', 'magenta')
+logger = ColorizedLogger('NullsFixer', 'yellow')
 
 
 class NullsFixer:
@@ -44,10 +44,15 @@ class NullsFixer:
         return df
 
     def scale_cols(self, df: pd.DataFrame, cols: List[Tuple]) -> pd.DataFrame:
+        def scale_func(col):
+            if col.max() > max_val:
+                minmax_scale(col.astype(float), feature_range=(0, max_val))
+            return col
+
         for col, max_val in cols:
-            df[col] = df.groupby(self.group_col)[col].transform(
-                lambda x: minmax_scale(x.astype(float), feature_range=(0, max_val)))
-            return df
+            logger.info(f'Scaling "{col}" column in the range: [0, {max_val}]')
+            df[col] = df.groupby(self.group_col)[col].transform(scale_func)
+        return df
 
     def fix_and_infer(self, df: pd.DataFrame) -> pd.DataFrame:
         accum_cols = ['people_fully_vaccinated', 'people_vaccinated', 'total_vaccinations']

@@ -22,8 +22,6 @@ class Visualizer:
     sort_col: str
     group_col: str
     text_color: str
-    cols: List[str] = ['iso_code', 'date', 'daily_vaccinations', 'total_vaccinations',
-                       'people_vaccinated', 'people_fully_vaccinated']
 
     def __init__(self, sort_col: str, group_col: str, text_color: str):
         self.sort_col = sort_col

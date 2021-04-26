@@ -2,6 +2,7 @@
 
 from .nulls_fixer import NullsFixer
 from .visualizer import Visualizer
+from .preprocess import Preprocess
 
 __author__ = "drkostas"
 __email__ = "kgeorgio@vols.utk.edu"

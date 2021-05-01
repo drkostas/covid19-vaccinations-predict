@@ -238,7 +238,7 @@ class Visualizer:
         df_pred_ = df_pred_.sort_values(self.sort_col)  # .set_index(df_pred_[self.sort_col])
         # Initialize the figure
         plot_cols = [plot_col]
-        fig, ax = plt.subplots(figsize=(12, 8*top_n), nrows=top_n, ncols=len(plot_cols))
+        fig, ax = plt.subplots(figsize=(12, 8 * top_n), nrows=top_n, ncols=len(plot_cols))
         date_form = DateFormatter("%m-%d")
         ax = np.array(ax).T
         # Prepare the Data
@@ -251,12 +251,12 @@ class Visualizer:
         if len(plot_cols) == 1:
             ax = [ax]
         for ax_group, plot_col in zip(ax, plot_cols):
-            df_true_groups = df_true_.loc[
-                df_true_[self.group_col].isin(top_countries),
-                [self.group_col, self.sort_col, plot_col]].groupby(df_true_[self.group_col])
-            df_pred_groups = df_pred_.loc[
-                df_pred_[self.group_col].isin(top_countries),
-                [self.group_col, self.sort_col, plot_col]].groupby(df_true_[self.group_col])
+            df_true_groups = df_true_.loc[df_true_[self.group_col].isin(top_countries),
+                                          [self.group_col, self.sort_col, plot_col]].groupby(
+                df_true_[self.group_col])
+            df_pred_groups = df_pred_.loc[df_pred_[self.group_col].isin(top_countries),
+                                          [self.group_col, self.sort_col, plot_col]].groupby(
+                df_true_[self.group_col])
             if top_n == 1:
                 ax_group = [ax_group]
             iter_groups = zip(df_true_groups, df_pred_groups, ax_group)
@@ -271,7 +271,7 @@ class Visualizer:
                               fontsize=24, color=self.text_color)
                 ax_.set_xlabel('Date', fontsize=22, color=self.text_color)
                 ax_.set_ylabel('Value %', fontsize=22, color=self.text_color)
-                ax_.set_ylim((-0.5, 4*true_max))
+                ax_.set_ylim((-0.5, 4 * true_max))
                 ax_.set_xticklabels(true_group.date, size=20,
                                     color=self.text_color, minor=False)
                 ax_.xaxis.set_major_formatter(date_form)
@@ -282,6 +282,59 @@ class Visualizer:
                 ax_.tick_params(axis='both', which='minor', bottom=False, labelbottom=False)
         # Show Plot
         plt.minorticks_off()
+        plt.tight_layout()
+        # plt.subplots_adjust(hspace=0.6)
+        plt.show()
+
+    def viz_erros(self, per_date_avg: pd.Series, per_country_avg: pd.Series, top_n: int = 10) -> None:
+        # Per country
+        fig, ax = plt.subplots(figsize=(24, 8), nrows=1, ncols=2)
+        # Prepare the Data
+        countries_largest_errors = per_country_avg.sort_values(ascending=False).head(top_n)
+        countries_smallest_errors = per_country_avg.sort_values(ascending=False).tail(top_n)
+        # Setup the figure
+        # Countries with largest error
+        ax[0] = sns.barplot(x=countries_largest_errors.index,
+                            y=countries_largest_errors, ax=ax[0])
+        ax[0].set_title(f"Countries with largest errors", fontsize=24)
+        ax[0].set_xlabel('Country', fontsize=22)
+        ax[0].set_ylabel('RMSE', fontsize=22)
+        ax[0].tick_params(axis='both', size=20)
+        # Countries with smallest error
+        ax[1] = sns.barplot(x=countries_smallest_errors.index,
+                            y=countries_smallest_errors, ax=ax[1])
+        ax[1].set_title(f"Countries with smallest errors", fontsize=24)
+        ax[1].set_xlabel('Country', fontsize=22)
+        ax[1].yaxis.set_label_position("right")
+        ax[1].yaxis.tick_right()
+        ax[1].tick_params(axis='both', size=20)
+
+        # Per Date
+        fig, ax = plt.subplots(figsize=(24, 8), nrows=1, ncols=2)
+        # Prepare the Data
+        dates_largest_errors = per_date_avg.sort_values(ascending=False).head(top_n)
+        dates_smallest_errors = per_date_avg.sort_values(ascending=False).tail(top_n)
+        idx_large = dates_largest_errors.index.strftime("%d/%m")
+        idx_small = dates_smallest_errors.index.strftime("%d/%m")
+        # Setup the figure
+        # Countries with largest error
+        ax[0] = sns.barplot(x=idx_large,
+                            y=dates_largest_errors, ax=ax[0])
+        ax[0].set_title(f"Dates with largest errors", fontsize=24)
+        ax[0].set_xlabel('Country', fontsize=22)
+        ax[0].set_ylabel('RMSE', fontsize=22)
+        ax[0].tick_params(axis='both', size=20)
+        ax[0].set_xticklabels(ax[0].get_xticklabels(), rotation=45, ha="right")
+        # Countries with smallest error
+        ax[1] = sns.barplot(x=idx_small,
+                            y=dates_smallest_errors, ax=ax[1])
+        ax[1].set_title(f"Dates with smallest errors", fontsize=24)
+        ax[1].set_xlabel('Date', fontsize=22)
+        ax[1].yaxis.set_label_position("right")
+        ax[1].yaxis.tick_right()
+        ax[1].tick_params(axis='both', size=20)
+        ax[1].set_xticklabels(ax[1].get_xticklabels(), rotation=45, ha="right")
+        # Show Plot
         plt.tight_layout()
         # plt.subplots_adjust(hspace=0.6)
         plt.show()

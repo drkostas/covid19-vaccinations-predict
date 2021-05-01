@@ -85,37 +85,6 @@ class BuildModel:
 
         return predictions_expanded_df, test_expanded_df
 
-    @staticmethod
-    def summarize_scores(name: str, score: float, scores: List[str]) -> None:
-        """ Summarize scores """
-
-        s_scores = ', '.join(['%.1f' % s for s in scores])
-        logger.info('%s: [%.3f] %s' % (name, score, s_scores))
-
-    def evaluate_model(self, train: np.ndarray, test: np.ndarray, verbose: int,
-                       epochs: int, batch_size: int):
-        """ Evaluate a single model """
-
-        # fit model
-        num_features = train.shape[2]
-        model = self.build_model(train, self.window_size, verbose, epochs, batch_size, num_features)
-        # history is a list of weekly data
-        history = [x for x in train]
-        # walk-forward validation over each week
-        predictions = list()
-        for i in range(len(test)):
-            # predict the week
-            yhat_sequence = self.forecast(model, history, self.window_size)
-            # store the predictions
-            predictions.append(yhat_sequence)
-            # get real observation and add to history for predicting the next week
-            history.append(test[i, :])
-        # evaluate predictions days for each week
-        predictions = np.array(predictions)
-        score, scores = self.evaluate_forecasts(test[:, :, 0], predictions)
-
-        return score, scores
-
     def build_model(self, train: np.ndarray, loss: tf.keras.losses.Loss,
                     activation='linear', neurons_per_layer: List[int] = None) \
             -> Tuple[tf.keras.Model, np.ndarray, np.ndarray]:
@@ -255,27 +224,44 @@ class BuildModel:
         yhat = yhat[0]
         return yhat
 
-    @staticmethod
-    def evaluate_forecasts(actual: np.ndarray, predicted: np.ndarray) \
-            -> Tuple[float, List[float]]:
-        """ evaluate one or more weekly forecasts against expected values """
+    @classmethod
+    def evaluate_predictions(cls, actual_df: pd.DataFrame, predicted_df: pd.DataFrame) \
+            -> pd.DataFrame:
+        """ Evaluate the predictions """
 
-        scores = list()
+        scores_columns = list(actual_df.columns)[:2] + ['rmse']
+        scores_df = pd.DataFrame(columns=scores_columns)
+        actual = actual_df.values
+        predicted = predicted_df.values
         # calculate an RMSE score for each day
-        for i in range(actual.shape[1]):
-            # calculate mse
-            mse = mean_squared_error(actual[:, i, :], predicted[:, i, :])
-            print(mse)
-            # calculate rmse
-            rmse = sqrt(mse)
-            # store
-            scores.append(rmse)
-
-        # calculate overall RMSE
-        s = 0
         for row in range(actual.shape[0]):
-            for col in range(actual.shape[1]):
-                for feat in range(actual.shape[2]):
-                    s += (actual[row, col, feat] - predicted[row, col, feat]) ** 2
-        score = sqrt(s / (actual.shape[0] * actual.shape[1] * actual.shape[2]))
-        return score, scores
+            # RMSE
+            curr_actual = np.array(actual[row, 2])
+            curr_predicted = np.array(predicted[row, 2])
+            rmse = cls.rmse(curr_actual, curr_predicted)
+            # Save Result
+            scores_df = scores_df.append({scores_columns[0]: actual[row, 0],
+                                          scores_columns[1]: actual[row, 1],
+                                          scores_columns[2]: rmse},
+                                         ignore_index=True)
+
+        return scores_df
+
+    @staticmethod
+    def rmse(actual, prediction):
+        return np.sqrt(((prediction - actual) ** 2).mean())
+
+    @staticmethod
+    def summarize_scores(scores_df: pd.DataFrame) \
+            -> [float, pd.Series, pd.Series]:
+        """ Summarize scores """
+
+        scores_columns = scores_df.columns
+        # Total average scores
+        total_avg = scores_df[scores_columns[2]].mean()
+        # Per Date average scores
+        per_date_avg = scores_df.groupby(scores_df.date)[scores_columns[2]].mean()
+        # Per Country average scores
+        per_country_avg = scores_df.groupby(scores_df.iso_code)[scores_columns[2]].mean()
+
+        return total_avg, per_date_avg, per_country_avg

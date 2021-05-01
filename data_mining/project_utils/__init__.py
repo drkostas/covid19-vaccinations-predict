@@ -3,6 +3,7 @@
 from .nulls_fixer import NullsFixer
 from .visualizer import Visualizer
 from .preprocess import Preprocess
+from .build_model import BuildModel
 
 __author__ = "drkostas"
 __email__ = "kgeorgio@vols.utk.edu"

@@ -1,7 +1,7 @@
 # Makefile for the data_mining module
 
 SHELL=/bin/bash
-PYTHON_VERSION=3.8
+PYTHON_VERSION=3.6
 
 # You can use either venv (virtualenv) or conda env by specifying the correct argument (server=<prod, circleci, local>)
 ifeq ($(server),prod)
@@ -84,6 +84,7 @@ create_env:
 run_tests:
 	$(BIN)/python setup.py test $(SETUP_FLAG)
 setup:
+	$(BIN)/pip install cython
 	$(BIN)/python setup.py install $(SETUP_FLAG)
 download_dataset:
 	rm -rf datasets/covid-world-vaccination-progress

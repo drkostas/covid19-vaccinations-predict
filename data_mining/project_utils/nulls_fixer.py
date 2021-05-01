@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
-from typing import List, Tuple
-from sklearn.preprocessing import minmax_scale
+from typing import List, Tuple, Dict
+from sklearn.preprocessing import MinMaxScaler
 from data_mining import ColorizedLogger
 
 logger = ColorizedLogger('NullsFixer', 'yellow')
@@ -43,15 +43,52 @@ class NullsFixer:
             'daily_vaccinations', 'daily_vaccinations_per_million', 10000), axis=1)
         return df
 
-    def scale_cols(self, df: pd.DataFrame, cols: List[Tuple]) -> pd.DataFrame:
-        def scale_func(col):
-            if col.max() > max_val:
-                minmax_scale(col.astype(float), feature_range=(0, max_val))
-            return col
+    def scale_cols(self, df: pd.DataFrame, cols: List[Tuple], per_group: bool = False) \
+            -> Tuple[pd.DataFrame, Dict, List[Tuple]]:
+        def scale_func(group_col, col_name):
+            # if col.max() > max_val:
+            scaler_ = MinMaxScaler(feature_range=(0, max_val))
+            scalers[(col_name, group_col.name)] = scaler_
+            return scaler_.fit_transform(group_col.astype(float).values.reshape(-1, 1)).reshape(-1)
+
+        df_keys = df.copy()[[self.sort_col, self.group_col]]
+        df_keys = [tuple(x) for x in df_keys.to_numpy()]
+
+        scalers = {}
+        for col, max_val in cols:
+            # logger.info(f'Scaling "{col}" column in the range: [0, {max_val}]')
+            if per_group:
+                df[col] = df.groupby(self.group_col)[col].transform(scale_func, col_name=col)
+            else:
+                scaler = MinMaxScaler(feature_range=(0, max_val))
+                scalers[col] = scaler
+                df[[col]] = scaler.fit_transform(df[[col]])
+
+        return df, scalers, df_keys
+
+    def unscale_cols(self, df: pd.DataFrame, cols: List[Tuple], scalers: Dict, df_keys: List[Tuple],
+                     per_group: bool = False) -> pd.DataFrame:
+        def unscale_func(group_col, col_name):
+            scaler_ = scalers[(col_name, group_col.name)]
+            return scaler_.inverse_transform(group_col.astype(float).values.reshape(-1, 1)).reshape(-1)
+
+        def fix_negatives(group_col):
+            min_val = group_col.min()
+            if min_val < 0:
+                group_col -= min_val
+            return group_col
+
+        df = df[df[[self.sort_col, self.group_col]].apply(tuple, axis=1).isin(df_keys)]
 
         for col, max_val in cols:
-            logger.info(f'Scaling "{col}" column in the range: [0, {max_val}]')
-            df[col] = df.groupby(self.group_col)[col].transform(scale_func)
+            # logger.info(f'Unscaling "{col}" column from the range: [0, {max_val}]')
+            if per_group:
+                df[col] = df.groupby(self.group_col)[col].transform(unscale_func, col_name=col)
+                df[col] = df.groupby(self.group_col)[col].transform(fix_negatives)
+            else:
+                scaler = scalers[col]
+                df[[col]] = scaler.inverse_transform(df[[col]])
+
         return df
 
     def fix_and_infer(self, df: pd.DataFrame) -> pd.DataFrame:

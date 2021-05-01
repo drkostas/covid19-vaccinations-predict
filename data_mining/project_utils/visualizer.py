@@ -1,12 +1,13 @@
 import warnings
 
-import numpy as np
 import pandas as pd
+import numpy as np
 import missingno as msno
 import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
-from typing import List, Tuple
+from matplotlib.dates import DateFormatter
+from typing import List
 
 from data_mining import ColorizedLogger
 
@@ -56,7 +57,7 @@ class Visualizer:
 
     @staticmethod
     def plot_vaccines_val_counts(df: pd.DataFrame, cols_to_visualize: List[str],
-                                    print_values: bool = False, top: int = 10) -> None:
+                                 print_values: bool = False, top: int = 10) -> None:
         # Copy the DF
         df_ = df.copy()
 
@@ -226,4 +227,61 @@ class Visualizer:
                 plt.tight_layout()
                 plt.subplots_adjust(hspace=0.6)
         # Show Plot
+        plt.show()
+
+    def viz_evaluate_predictions_progress(self, df_true: pd.DataFrame, df_pred: pd.DataFrame,
+                                          plot_col: str, top_n: int = 10) -> None:
+        # Copy the DF
+        df_true_ = df_true.copy()
+        df_pred_ = df_pred.copy()
+        df_true_ = df_true_.sort_values(self.sort_col)  # .set_index(df_true_[self.sort_col])
+        df_pred_ = df_pred_.sort_values(self.sort_col)  # .set_index(df_pred_[self.sort_col])
+        # Initialize the figure
+        plot_cols = [plot_col]
+        fig, ax = plt.subplots(figsize=(12, 8*top_n), nrows=top_n, ncols=len(plot_cols))
+        date_form = DateFormatter("%m-%d")
+        ax = np.array(ax).T
+        # Prepare the Data
+        dates = df_true_.date.unique()[-30:]
+        top_countries = list(df_true_[df_true_.date.isin(dates)].groupby(self.group_col).max()
+                             .sort_values(plot_col, ascending=False)
+                             .head(top_n).index)
+        # top_countries = ['USA', 'CHN']
+        # Setup the figure
+        if len(plot_cols) == 1:
+            ax = [ax]
+        for ax_group, plot_col in zip(ax, plot_cols):
+            df_true_groups = df_true_.loc[
+                df_true_[self.group_col].isin(top_countries),
+                [self.group_col, self.sort_col, plot_col]].groupby(df_true_[self.group_col])
+            df_pred_groups = df_pred_.loc[
+                df_pred_[self.group_col].isin(top_countries),
+                [self.group_col, self.sort_col, plot_col]].groupby(df_true_[self.group_col])
+            if top_n == 1:
+                ax_group = [ax_group]
+            iter_groups = zip(df_true_groups, df_pred_groups, ax_group)
+            for (name_true, true_group), (name_pred, pred_group), ax_ in iter_groups:
+                true_max = float(true_group[plot_col].max())
+                ax_ = true_group.plot.line(x=self.sort_col, y=plot_col, ax=ax_,
+                                           label='true', legend=True, subplots=False)
+                ax_ = pred_group.plot.line(x=self.sort_col, y=plot_col, ax=ax_,
+                                           label='predictions', legend=True, subplots=False)
+                plot_col_name = plot_col.replace('_', ' ').capitalize()
+                ax_.set_title(f"{plot_col_name} progress for {name_true}",
+                              fontsize=24, color=self.text_color)
+                ax_.set_xlabel('Date', fontsize=22, color=self.text_color)
+                ax_.set_ylabel('Value %', fontsize=22, color=self.text_color)
+                ax_.set_ylim((-0.5, 4*true_max))
+                ax_.set_xticklabels(true_group.date, size=20,
+                                    color=self.text_color, minor=False)
+                ax_.xaxis.set_major_formatter(date_form)
+                ax_.set_yticklabels(np.around(ax_.get_yticks(), decimals=4),
+                                    size=20, color=self.text_color)
+                ax_.legend(prop={'size': 16})
+                # ax_.tick_params(which='major', size=20, color=self.text_color)
+                ax_.tick_params(axis='both', which='minor', bottom=False, labelbottom=False)
+        # Show Plot
+        plt.minorticks_off()
+        plt.tight_layout()
+        # plt.subplots_adjust(hspace=0.6)
         plt.show()

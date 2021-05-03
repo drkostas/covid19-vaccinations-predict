@@ -57,7 +57,7 @@ class Visualizer:
 
     @staticmethod
     def plot_vaccines_val_counts(df: pd.DataFrame, cols_to_visualize: List[str],
-                                 print_values: bool = False, top: int = 10) -> None:
+                                 print_values: bool = False) -> None:
         # Copy the DF
         df_ = df.copy()
 
@@ -84,8 +84,11 @@ class Visualizer:
 
     @staticmethod
     def viz_columns_corr(df: pd.DataFrame, cols_to_visualize: List[str]) -> None:
+        df_ = df.copy()
+        df_ = df_[cols_to_visualize].rename(lambda x: x[:20] + '..' if len(x) > 22 else x,
+                                            axis='columns')
         sns.set(font_scale=1.4)
-        sns.heatmap(data=df[cols_to_visualize].corr(), cmap='coolwarm', annot=True, fmt=".1f",
+        sns.heatmap(data=df_.corr(), cmap='coolwarm', annot=True, fmt=".1f",
                     annot_kws={'size': 16})
 
     def plot_numerical_val_counts_per_country(self, df: pd.DataFrame, top: int = 3) -> None:
@@ -168,7 +171,7 @@ class Visualizer:
                         ax=ax)  # , sort='ascending')
         # Visualize heatmap to find correlations between columns when they have null values
         if not skip_2:
-            fig, ax = plt.subplots(figsize=(16, 6), nrows=1, ncols=1)
+            fig, ax = plt.subplots(figsize=(20, 6), nrows=1, ncols=1)
             plt.tight_layout()
             plt.subplots_adjust(hspace=0.6)
             msno.heatmap(df_, cmap="viridis", fontsize=16, ax=ax)
@@ -180,6 +183,7 @@ class Visualizer:
         # Plot total vaccinations per country (top 25)
         vacc_amount = df_.groupby(self.group_col).max() \
             .sort_values('total_vaccinations', ascending=False).head(top_n)
+        print(vacc_amount['total_vaccinations'].head())
         fig, ax = plt.subplots(figsize=(25, 6), nrows=1, ncols=3)
         plt.tight_layout()
         plt.subplots_adjust(hspace=0.6)
@@ -187,33 +191,35 @@ class Visualizer:
                     y=vacc_amount.total_vaccinations, ax=ax[0])
         ax[0].tick_params(labelrotation=90, axis='x')
         ax[0].set_title(f"Total vaccinations (Top {top_n} Countries)", fontsize=22)
-        ax[0].set_ylabel('Number of vaccinated citizens')
+        ax[0].set_ylabel('')
         ax[0].set_xlabel('Countries')
-        ax[0].set_xticklabels(ax[0].get_xticklabels(), size=16)
-        ax[0].set_yticklabels(ax[0].get_yticklabels(), size=16)
+        ax[0].set_xticklabels(vacc_amount.index, size=16)
+        ax[0].set_yticklabels(ax[0].get_yticks()*2, size=16)
         # Plot total vaccinations per 100 per country (top 25)
         vacc_amount = df_.groupby(self.group_col).max() \
             .sort_values('total_vaccinations_per_hundred', ascending=False).head(top_n)
+        print(vacc_amount['total_vaccinations_per_hundred'].head())
         sns.barplot(x=vacc_amount.index,
                     y=vacc_amount.total_vaccinations_per_hundred, ax=ax[1])
         ax[1].tick_params(labelrotation=90, axis='x')
         ax[1].set_title(f"Total vaccinations per 100 (Top {top_n} Countries)", fontsize=22)
-        ax[1].set_ylabel('Number of vaccinated people per 100 citizens')
+        ax[1].set_ylabel('% Value')
         ax[1].set_xlabel('Countries')
-        ax[1].set_xticklabels(ax[1].get_xticklabels(), size=16)
-        ax[1].set_yticklabels(ax[1].get_yticklabels(), size=16)
+        ax[1].set_xticklabels(vacc_amount.index, size=16)
+        ax[1].set_yticklabels(ax[1].get_yticks()*4, size=16)
         # AVG daily vaccinations per 100 per country(top 25)
         vacc_amount = df_.groupby(self.group_col).mean() \
             .sort_values('daily_vaccinations_per_hundred', ascending=False).head(top_n)
+        print(vacc_amount['daily_vaccinations_per_hundred'].head())
         ax[2].bar(vacc_amount.index, vacc_amount.daily_vaccinations_per_hundred)
         sns.barplot(x=vacc_amount.index,
                     y=vacc_amount.daily_vaccinations_per_hundred, ax=ax[2])
         ax[2].tick_params(labelrotation=90, axis='x')
         ax[2].set_title(f"AVG daily vaccinations per 100 (Top {top_n} Countries)", fontsize=22)
-        ax[2].set_ylabel('AVG daily vaccinations per 100')
+        ax[2].set_ylabel('% Value')
         ax[2].set_xlabel('Countries')
-        ax[2].set_xticklabels(ax[2].get_xticklabels(), size=16)
-        ax[2].set_yticklabels(ax[2].get_yticklabels(), size=16)
+        ax[2].set_xticklabels(vacc_amount.index, size=16)
+        ax[2].set_yticklabels(ax[2].get_yticks()*2, size=16)
         # Show Plot
         plt.tight_layout()
         plt.show()

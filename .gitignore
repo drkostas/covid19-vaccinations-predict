@@ -136,3 +136,7 @@ dmypy.json
 
 # Tmp files
 *tmp.*
+/covid-19-can-we-predict-the-future.ipynb
+/timeseries-analysis-a-complete-guide.ipynb
+/logs/fit/
+/Documents/notes.txt

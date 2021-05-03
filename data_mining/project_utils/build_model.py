@@ -1,10 +1,8 @@
 import pandas as pd
 import numpy as np
 import tensorflow as tf
-from sklearn.metrics import mean_squared_error
-from math import sqrt
+from datetime import datetime
 from typing import List, Tuple
-from keras_tqdm import TQDMNotebookCallback, TQDMCallback
 
 from data_mining import ColorizedLogger
 
@@ -111,6 +109,10 @@ class BuildModel:
         model.add(tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(num_features,
                                                                         activation=activation)))
         model.compile(loss=loss, optimizer='adam')
+        tf.keras.utils.plot_model(
+            model, to_file='img/model.png', show_shapes=False, show_dtype=False,
+            show_layer_names=True, rankdir='TB', expand_nested=False, dpi=96
+        )
 
         return model, train_x, train_y
 
@@ -122,8 +124,10 @@ class BuildModel:
         train_y = train_y.reshape((train_y.shape[0], train_y.shape[1], 1))
 
         # Fit the Model
+        log_dir = "logs/fit/" + datetime.now().strftime("%Y%m%d-%H%M%S")
+        tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
         model.fit(train_x, train_y, epochs=epochs,
-                  batch_size=batch_size, verbose=verbose)
+                  batch_size=batch_size, verbose=verbose, callbacks=[tensorboard_callback])
         return model
 
     @staticmethod

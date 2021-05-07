@@ -48,7 +48,7 @@ The extended abstract and the poster are both located in the [Documents folder](
 ### Information About The Dataset <a name = "datasetinfo"></a>
 
 The [COVID-19 Vaccination Progress Dataset](https://www.kaggle.com/gpreda/covid-world-vaccination-progress)
-contains information about the daily and total vaccinations of 193 different countries for 135
+contains information about the daily and total vaccinations of 193 different countries over 135
 different dates. The data are being collected almost daily and of writing this (4/29), the dataset has
 14230 rows and 15 different features.
 

@@ -1,3 +1,5 @@
+![covid19-vaccinations-predict](img/banner.png)
+
 # Simultaneous Time Series Forecasting on the World's COVID-19 Daily Vaccinations
 
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/drkostas/data_mining/master/LICENSE)

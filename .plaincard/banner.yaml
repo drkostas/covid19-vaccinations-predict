@@ -1,0 +1,14 @@
+kind: banner
+name: covid19-vaccinations-predict
+line: Forecasts daily COVID-19 vaccinations for many countries at once with LSTMs.
+accent: blue
+diagram:
+- globe:
+    label: countries
+- arrow
+- box:
+    text: LSTM
+- arrow
+- chart:
+    label: forecast
+    accent: true
